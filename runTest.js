@@ -24,7 +24,9 @@ module.exports = {
         process.exit(1);
       } else {
         console.log(
-          `${testType} test passed! Open the pact file in ${pactFile}`
+          testType === "consumer"
+            ? `${testType} test passed! Open the pact file in ${pactFile}`
+            : `${testType} test passed! The provider honours the consumer contract`
         );
         process.exit(0);
       }

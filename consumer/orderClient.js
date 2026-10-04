@@ -12,8 +12,8 @@ const fetchOrders = () => {
       }, []);
     },
     (err) => {
-      console.log(err)
-      throw new Error(`Error from response: ${err.body}`);
+      const detail = err.response ? JSON.stringify(err.response.body) : err.message;
+      throw new Error(`Error from response: ${detail}`);
     }
   );
 };

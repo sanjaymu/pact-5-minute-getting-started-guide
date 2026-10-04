@@ -22,7 +22,14 @@ describe("Pact Verification", () => {
       // we are starting it locally and defined the port above
       providerBaseUrl: `http://${hostname}:${port}`,
       // You can set the log level here, useful for debugging
-      logLevel: "info"
+      logLevel: "info",
+      // Provider states let us set up the data each interaction expects.
+      // The names must match the `given(...)` calls in the consumer test.
+      stateHandlers: {
+        "there are orders": () => {
+          return Promise.resolve("orders are present in the in-memory data store");
+        },
+      },
     };
 
     // The PACT_URL can either be a path to a local file
@@ -52,7 +59,7 @@ describe("Pact Verification", () => {
         providerVersion: process.env.GIT_COMMIT,
         providerVersionBranch: process.env.GIT_BRANCH,
         // we only want to publish pacts if we are in CI
-        publishVerificationResult: !!process.env.CI ?? false,
+        publishVerificationResult: !!process.env.CI,
       }
 
 
@@ -94,8 +101,11 @@ describe("Pact Verification", () => {
       }
     }
 
-    app = server.listen('3000', '127.0.0.1', () => {
-      console.log(`Provider service listening on http://localhost:${port}`);
+    await new Promise((resolve) => {
+      app = server.listen(port, hostname, () => {
+        console.log(`Provider service listening on http://${hostname}:${port}`);
+        resolve();
+      });
     });
   });
 
@@ -107,7 +117,6 @@ describe("Pact Verification", () => {
 
 
   it("should validate the expectations of Order Web", () => {
-    console.log(opts)
     return new Verifier(opts)
       .verifyProvider()
       .then((output) => {
@@ -116,6 +125,8 @@ describe("Pact Verification", () => {
       })
       .catch((e) => {
         console.error("Pact verification failed :(", e);
+        // re-throw so the test (and CI) fails when the contract is broken
+        throw e;
       });
   });
 });
